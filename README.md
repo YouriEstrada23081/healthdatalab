@@ -55,6 +55,15 @@ Este repositorio sigue una metodología de **Aprendizaje basado en proyectos e i
 
 ---
 
+## Reglas
+
+- Nunca trabajar en main
+- Una rama por lab: labXX/grupo-YY
+- Solo editar tu carpeta submissions/grupo-YY
+- Entrega = PR a main
+
+---
+
 ## 📚 Bibliografía Guía
 
 - **Nguyen, A.** (2022). _Hands-On Healthcare Data_. O’Reilly Media..

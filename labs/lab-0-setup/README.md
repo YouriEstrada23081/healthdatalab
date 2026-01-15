@@ -1,84 +1,335 @@
-# Laboratorio 01: Cimientos del Patient Journey - Configuración y Reproducibilidad 🛠️
+# Laboratorio 00- Setup Reproducible (Docker + Postgres + Jupyter) 🛠️
 
-Este laboratorio constituye el punto de partida técnico para el curso **BE3006: Análisis de Datos Biomédicos**. Siguiendo la visión del **Patient Journey**, estableceremos un entorno de trabajo que garantice la **reproducibilidad de grado regulatorio**, un estándar exigido por entidades como la FDA y la EMA para validar resultados analíticos en salud.
+**Objetivo:**
+Al final tendrás una “mini pila” de datos biomédicos reproducible:
 
-## 🎯 Objetivos
+1. Una base de datos PostgreSQL corriendo en Docker
+2. JupyterLab corriendo en Docker
+3. Un script SQL versionado que crea una tabla e inserta datos
+4. Un Notebook que consulta la base de datos y muestra resultados
+5. Un Pull Request (PR) como entrega
 
-- Desplegar un entorno analítico reproducible utilizando **Docker** y **Docker Compose**.
-- Diferenciar entre sistemas **OLTP** (transacciones clínicas) y **OLAP** (análisis de datos masivos).
-- Verificar la interoperabilidad técnica conectando un **Jupyter Notebook** con una base de datos **PostgreSQL**.
-
----
-
-## 🚀 Paso 1: Instalación de Herramientas Base
-
-Antes de iniciar, es necesario contar con las únicas herramientas que residen directamente en el sistema operativo local para evitar "dependencias quisquillosas" entre las aplicaciones y el hardware.
-
-1.  **Docker Desktop:** Permite la virtualización a nivel de aplicación (contenedores) sin la sobrecarga de una máquina virtual tradicional.
-2.  **Git:** Para el control de versiones y la gestión de la gobernanza del código.
+> ✅ Si logras ver un DataFrame en Jupyter con datos desde Postgres, **pasaste el lab**.
 
 ---
 
-## 🏗️ Paso 2: El Blueprint de la Arquitectura (`docker-compose.yml`)
+## 0) Reglas del curso (muy importante)
 
-Siguiendo las directrices técnicas del libro _Hands-On Healthcare Data_ (Capítulo 2), utilizaremos contenedores para separar las preocupaciones de infraestructura. Tu archivo `docker-compose.yml` debe orquestar dos servicios principales:
+- **Nunca trabajes en `main`.**
+- **No instales Python local para este lab.** Todo corre dentro de Docker.
+- Si algo falla, **no te quedes atorado**: pasa al Troubleshooting y/o trabaja con un compañero.
 
-1.  **`db` (PostgreSQL):** Representa el almacenamiento de datos del **EHR (Electronic Health Record)**. Es un sistema orientado a transacciones (**OLTP**).
-2.  **`jupyter`:** Representa nuestro entorno de procesamiento analítico (**OLAP**), optimizado para escanear grandes subconjuntos de datos.
+---
 
-**Comando para iniciar:**
+## 1) Prerrequisitos
 
-```bash
+### 1.1 Crear cuenta en GitHub
+
+- Crea/usa una cuenta en GitHub.
+- Asegúrate de poder iniciar sesión.
+
+### 1.2 Instalar VS Code
+
+- Instala Visual Studio Code.
+
+### 1.3 Instalar Git
+
+- Instala Git.
+- Verifica en terminal (PowerShell o VS Code Terminal):
+
+```powershell
+git --version
+```
+
+### 1.4 Instalar Docker Desktop
+
+- Instala Docker Desktop.
+- **Abre Docker Desktop** y espera a que diga **Engine running**.
+- Verifica en terminal:
+
+```powershell
+docker --version
+docker version
+```
+
+> ✅ Debes ver sección **Server: Docker Desktop** en `docker version`.
+
+---
+
+## 2) Descargar el repositorio del curso (clonar)
+
+### 2.1 Abrir terminal en VS Code
+
+- Abre VS Code
+- Abre la carpeta donde quieres guardar el proyecto
+- Abre Terminal: `Terminal → New Terminal`
+
+### 2.2 Clonar el repositorio
+
+Copia el link del repo y ejecuta:
+
+```powershell
+git clone <URL_DEL_REPO>
+cd <NOMBRE_DEL_REPO>
+```
+
+> Tip: si ya lo clonaste antes, entra a la carpeta con `cd`.
+
+---
+
+## 3) Entrar al laboratorio
+
+Ve a la carpeta del lab (ajusta según tu estructura):
+
+```powershell
+cd labs/lab-0-setup
+```
+
+(En tu repo puede llamarse distinto; sigue la estructura que te dieron.)
+
+---
+
+## 4) Levantar la pila (Docker Compose)
+
+### 4.1 Confirmar que Docker Desktop está abierto
+
+Docker Desktop debe estar **abierto**. Si lo cerraste, vuelve a abrirlo.
+
+### 4.2 Levantar servicios
+
+Ejecuta:
+
+```powershell
 docker compose up -d
 ```
 
-_Este comando descarga las imágenes oficiales y levanta los servicios de forma aislada._
+Esto debe crear/levantar:
 
----
+- `db` (PostgreSQL)
+- `jupyter` (JupyterLab)
 
-## 🧪 Paso 3: Prueba de Humo y Conexión (`connection_test.ipynb`)
+### 4.3 Verificar que está corriendo
 
-Para confirmar que nuestra pila de datos biomédicos está lista, ejecutaremos una consulta en Python que verifique la comunicación entre el entorno analítico y la base de datos.
-
-**Código de verificación:**
-
-```python
-import pandas as pd
-from sqlalchemy import create_engine
-
-# String de conexión al contenedor de PostgreSQL
-engine = create_engine('postgresql://uvg_user:uvg_password@db:5432/health_data')
-
-try:
-    df = pd.read_sql("SELECT 1 as connection_status", engine)
-    print("¡Conexión Exitosa! El entorno analítico está listo.")
-    print(df)
-except Exception as e:
-    print(f"Error de conexión: {e}")
+```powershell
+docker ps
 ```
 
-_Este paso asegura la **Interoperabilidad Técnica**: la capacidad de enviar y recibir "bits y bytes" de forma confiable entre sistemas heterogéneos._
+✅ Debes ver algo como:
+
+- `lab-0-setup-db-1` (postgres)
+- `lab-0-setup-jupyter-1` (jupyter)
 
 ---
 
-## 🧠 Mentalidad Empresarial: OLTP vs. OLAP
+## 5) Abrir JupyterLab
 
-Es vital comprender por qué no realizamos análisis directamente sobre las bases de datos de producción de un hospital.
+Abre en tu navegador:
 
-- **OLTP (Online Transactional Processing):** Diseñado para registrar acciones rápidas (ej. una enfermera administrando un medicamento).
-- **OLAP (Online Analytical Processing):** Diseñado para responder preguntas de investigación (ej. ¿Cuál es el promedio de estancia de pacientes con sepsis en la región?).
+- [http://localhost:8888](http://localhost:8888)
+
+Deberías ver JupyterLab con archivos del repo en la carpeta `/work`.
+
+---
+
+## 6) Prueba de conexión (Notebook)
+
+Abre `connection_test.ipynb` y ejecuta las celdas.
+
+Debe salir algo como:
+
+- “Connection Successful…”
+- una tabla con `connection_status = 1`
+
+> Si esto funciona, tu infraestructura está lista.
 
 ---
 
-## 🏆 Reto: Tarea de Gobernanza
+## 7) Crear datos en la base de datos (SQL reproducible)
 
-Para cumplir con la **Competencia 1 (Gobernanza de datos)**, cada estudiante debe documentar el origen de sus datos.
+Ahora crearemos una tabla simple `patient` y cargaremos 3 filas.
 
-**Instrucciones:**
+### 7.1 Crear el archivo SQL
 
-1.  Crea un **Issue** en este repositorio de GitHub titulado "Gobernanza: Metadatos de Proyecto - [Tu Nombre]".
-2.  Responde: ¿Cuál es el propósito del set de datos que usarás (MIMIC-III o Synthea)?.
-3.  Identifica si tu análisis será de **Uso Primario** (decisión clínica individual) o **Uso Secundario** (investigación/IA/conocimiento poblacional).
-4.  Adjunta una captura de pantalla del log de Docker mostrando que tus servicios están en ejecución (`Running`).
+En el repo, crea la carpeta `sql/` (si no existe) y el archivo:
+
+- `sql/001_init.sql`
+
+Contenido:
+
+```sql
+CREATE TABLE IF NOT EXISTS patient (
+  patient_id SERIAL PRIMARY KEY,
+  sex TEXT CHECK (sex IN ('M','F','O')),
+  birth_date DATE,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+INSERT INTO patient (sex, birth_date) VALUES
+('F', '1990-05-12'),
+('M', '1984-11-03'),
+('O', '2001-07-21');
+```
+
+### 7.2 Ejecutar el SQL en PostgreSQL (Windows PowerShell)
+
+PowerShell NO soporta `< archivo.sql` como bash.
+Usa este comando:
+
+```powershell
+Get-Content .\sql\001_init.sql | docker compose exec -T db psql -U uvg_user -d health_data
+```
+
+✅ Debes ver algo como:
+
+- `CREATE TABLE`
+- `INSERT 0 3`
 
 ---
+
+## 8) Consultar los datos desde Jupyter
+
+En `connection_test.ipynb`, agrega y ejecuta una celda con:
+
+```python
+df = pd.read_sql("""
+SELECT patient_id, sex, birth_date, created_at
+FROM patient
+ORDER BY patient_id;
+""", engine)
+df
+```
+
+Luego ejecuta este KPI simple:
+
+```python
+pd.read_sql("""
+SELECT sex, COUNT(*) AS n
+FROM patient
+GROUP BY sex
+ORDER BY n DESC;
+""", engine)
+```
+
+✅ Si ves resultados: cerraste el ciclo **DB → análisis**.
+
+---
+
+## 9) Entrega (Pull Request) — se hace AL FINAL (cuando todos tengan setup)
+
+**Importante:** no crees grupos al inicio. Primero todos deben lograr el setup.
+Cuando ya lo lograste, el docente asignará los grupos.
+
+### 9.1 Crear rama del laboratorio
+
+(El nombre exacto lo dirá el docente; ejemplo:)
+
+```powershell
+git checkout main
+git pull
+git checkout -b lab01/grupo-XX
+```
+
+### 9.2 Guardar cambios (commit)
+
+```powershell
+git status
+git add sql/001_init.sql connection_test.ipynb
+git commit -m "Lab01: setup reproducible + patient table + query"
+```
+
+### 9.3 Subir tu rama (push)
+
+```powershell
+git push -u origin lab01/grupo-XX
+```
+
+### 9.4 Crear Pull Request (PR) en GitHub
+
+En GitHub:
+
+- Abre el repo
+- Te aparecerá “Compare & pull request”
+- Base: `main`
+- Compare: `lab01/grupo-XX`
+
+**Título:** `Lab01 – Grupo XX`
+**Descripción (pega esto):**
+
+- Docker compose levanta Postgres + Jupyter
+- Ejecuté `sql/001_init.sql` (tabla `patient` + 3 inserts)
+- El notebook consulta `patient` y genera un KPI simple
+
+✅ Entrega completa = PR creado.
+
+---
+
+# Troubleshooting (soluciones rápidas)
+
+## A) “Docker daemon is not running”
+
+- Abre Docker Desktop
+- Espera “Engine running”
+- Reintenta:
+
+```powershell
+docker version
+```
+
+## B) “Internal Server Error … API version …”
+
+1. Asegúrate que Docker Desktop esté abierto
+2. Quita variables de entorno (PowerShell):
+
+```powershell
+Remove-Item Env:DOCKER_API_VERSION -ErrorAction SilentlyContinue
+Remove-Item Env:DOCKER_HOST -ErrorAction SilentlyContinue
+Remove-Item Env:DOCKER_CONTEXT -ErrorAction SilentlyContinue
+```
+
+3. Reintenta:
+
+```powershell
+docker ps
+```
+
+## C) No abre [http://localhost:8888](http://localhost:8888)
+
+Ver logs:
+
+```powershell
+docker compose logs -f jupyter
+```
+
+## D) Puerto 5432 ocupado
+
+Si tu máquina ya usa Postgres en 5432:
+
+- cambia el puerto host en `docker-compose.yml` a `5433:5432`
+- vuelve a levantar:
+
+```powershell
+docker compose up -d
+```
+
+> O pide ayuda al docente.
+
+## E) En PowerShell no funciona `< archivo.sql`
+
+Correcto: PowerShell no usa `<` así.
+Usa siempre:
+
+```powershell
+Get-Content .\sql\001_init.sql | docker compose exec -T db psql -U uvg_user -d health_data
+```
+
+---
+
+## Checklist de éxito ✅
+
+- [ ] Docker Desktop abierto y “Engine running”
+- [ ] `docker compose up -d` funciona
+- [ ] `docker ps` muestra `db` y `jupyter`
+- [ ] Jupyter abre en `localhost:8888`
+- [ ] Notebook muestra conexión exitosa
+- [ ] Tabla `patient` creada y consultada
+- [ ] PR abierto en GitHub
