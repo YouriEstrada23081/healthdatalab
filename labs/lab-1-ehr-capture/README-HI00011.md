@@ -497,6 +497,9 @@ Pistas:
 
 ## 6) Reflexión (responde en el PR)
 
+> [!CAUTION]
+> Si no puedes responder esto, **no entendiste el modelo**, aunque el código funcione.
+
 1. ¿Por qué los laboratorios no están en `patients`?
 2. ¿Qué representa `hadm_id` clínicamente?
 3. ¿Qué problema tendría una sola tabla?
