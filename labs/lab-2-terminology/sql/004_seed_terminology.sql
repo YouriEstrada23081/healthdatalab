@@ -23,7 +23,7 @@ VALUES
   ((SELECT system_id FROM terminology_systems WHERE system_name='ICD-10'), 'J45.901','Unspecified asthma with exacerbation','ICD-10', 'diagnosis'),
   ((SELECT system_id FROM terminology_systems WHERE system_name='ICD-10'), 'J18.9',  'Pneumonia, unspecified organism', 'ICD-10', 'diagnosis'),
   ((SELECT system_id FROM terminology_systems WHERE system_name='ICD-10'), 'T14.90', 'Injury, unspecified, initial encounter', 'ICD-10', 'diagnosis'),
-  ((SELECT system_id FROM terminology_systems WHERE system_name='ICD-10'), 'N39.0',  'Urinary tract infection, site not specified','ICD-10', 'diagnosis'),
+  ((SELECT system_id FROM terminology_systems WHERE system_name='ICD-10'), 'N39.0',  'Urinary tract infection, site not specified','ICD-10', 'diagnosis')
 ON CONFLICT (system_id, code) DO NOTHING;
 
 -- 3) Conceptos LOINC (mini)
@@ -74,19 +74,7 @@ VALUES
 
   ('Urinary tract infection', (SELECT concept_id FROM terminology_concepts c
                                JOIN terminology_systems s ON s.system_id=c.system_id
-                               WHERE s.system_name='ICD-10' AND c.code='N39.0')),
-
-  ('Dehydration', (SELECT concept_id FROM terminology_concepts c
-                   JOIN terminology_systems s ON s.system_id=c.system_id
-                   WHERE s.system_name='ICD-10' AND c.code='E86.0')),
-
-  ('Heart failure', (SELECT concept_id FROM terminology_concepts c
-                     JOIN terminology_systems s ON s.system_id=c.system_id
-                     WHERE s.system_name='ICD-10' AND c.code='I50.9')),
-
-  ('Appendicitis', (SELECT concept_id FROM terminology_concepts c
-                    JOIN terminology_systems s ON s.system_id=c.system_id
-                    WHERE s.system_name='ICD-10' AND c.code='K35.80'))
+                               WHERE s.system_name='ICD-10' AND c.code='N39.0'))
 ON CONFLICT (diagnosis_text) DO NOTHING;
 
 -- 5) Mapeo: d_labitems.label/unit (local) → concepto LOINC
